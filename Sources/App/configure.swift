@@ -31,7 +31,6 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     databases.add(database: db, as: .psql)
     services.register(databases)
 
-    // TODO: Configure migrations
     var migrations = MigrationConfig()
     migrations.add(model: Team.self, database: .psql)
     services.register(migrations)
