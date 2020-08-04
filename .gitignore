@@ -7,3 +7,4 @@ DerivedData/
 .swiftpm
 db.sqlite
 .envrc
+.env.development
