@@ -1,36 +1,37 @@
-//
-//  TeamController.swift
-//  
-//
-//  Created by Steven Prichard on 12/24/19.
-//
-
-import Foundation
 import Vapor
+import Foundation
 import MLBScrapperLib
 
-struct TeamController: RouteCollection {
-    func boot(router: Router) throws {
-        router.get("api", "teams", use: getAllHandler)
-        router.post("api", "teams", use: hydrateHandler)
+struct TeamController {
+    func getAllHandler(_ req: Request) throws -> EventLoopFuture<[TeamModel]> {
+        return TeamModel.query(on: req.db).all()
     }
     
-    func getAllHandler(_ req: Request) throws -> Future<[Team]> {
-        return Team.query(on: req).all()
+    func hydrateHandler(_ req: Request) throws -> EventLoopFuture<[TeamModel]> {
+        let data = try req.content.decode(HydrateRequest.self)
+        let teams = try Team.GetTeams(season: data.year)
+        
+        let models = teams.map { team -> TeamModel in
+            guard let id = team.id else { fatalError() }
+            
+            return TeamModel(
+                teamID: id,
+                venueID: team.VenueID,
+                venueName: team.VenueName,
+                name: team.Name,
+                divisionID: team.DivisionID
+            )
+        }
+        
+        return models
+            .create(on: req.db)
+            .flatMap { req.eventLoop.makeSucceededFuture(models) }
     }
-    
-    func hydrateHandler(_ req: Request) throws -> Future<[Team]> {
-        return try req
-            .content
-            .decode(HydrateRequest.self)
-            .flatMap(to: [Team].self, ({ hydrate in
-                let teamList = try Team.GetTeams(season: hydrate.year)
-                return teamList
-                    .map({ $0.create(on: req) })
-                    .flatten(on: req)
-            }))
-            .catchMap({ error in
-                throw Abort(.internalServerError, reason: "\(error)")
-            })
+}
+
+extension TeamController: RouteCollection {
+    func boot(routes: RoutesBuilder) throws {
+        routes.get("api", "teams", use: getAllHandler)
+        routes.post("api", "teams", use: hydrateHandler)
     }
 }

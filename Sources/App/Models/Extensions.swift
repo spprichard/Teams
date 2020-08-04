@@ -5,12 +5,9 @@
 //  Created by Steven Prichard on 12/24/19.
 //
 
-import Foundation
 import Vapor
-import FluentPostgreSQL
+import Foundation
 import MLBScrapperLib
+import FluentPostgresDriver
+import Fluent
 
-extension Team: PostgreSQLModel {}
-extension Team: Migration {}
-extension Team: Content {}
-extension Team: Model {}
